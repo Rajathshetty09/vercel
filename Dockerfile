@@ -1,18 +1,19 @@
-# --- Stage 1: Build Stage ---
-FROM public.ecr.aws/docker/library/node:20-alpine AS builder
+# Use the official AWS ECR Public Node image
+FROM public.ecr.aws/docker/library/node:20-alpine
 WORKDIR /app
+
+# Copy package configuration files and install dependencies
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
+
+# Copy all the application source code
 COPY . .
+
+# Build the production Next.js application
 RUN npm run build
 
-# --- Stage 2: Serve Stage ---
-FROM public.ecr.aws/nginx/nginx:alpine
-RUN rm -rf /usr/share/nginx/html/*
+# Next.js production runs on port 3000 by default
+EXPOSE 3000
 
-# Copy the built standalone build artifacts directly into Nginx
-COPY --from=builder /app/.next/static /usr/share/nginx/html/_next/static
-COPY --from=builder /app/public /usr/share/nginx/html
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Start the native web server
+CMD ["npm", "run", "start"]
